@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-primary: #06102b;
+  --color-primary-container: #1c2541;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #838cae;
+  --color-primary-fixed: #dbe1ff;
+  --color-primary-fixed-dim: #bdc5e9;
+
+  --color-surface: #fff8f7;
+  --color-surface-dim: #ffcfcb;
+  --color-surface-bright: #fff8f7;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fff0ef;
+  --color-surface-container: #ffe9e7;
+  --color-surface-container-high: #ffe1df;
+  --color-surface-container-highest: #ffdad7;
+
+  --color-on-surface: #410004;
+  --color-on-surface-variant: #45464d;
+  --color-outline: #76767e;
+  --color-outline-variant: #c6c6ce;
+
+  --color-tertiary: #1d0f00;
+  --color-tertiary-container: #382200;
+  --color-on-tertiary-container: #be8222;
+  --color-tertiary-fixed: #ffddb4;
+  --color-tertiary-fixed-dim: #feb956;
+
+  --color-secondary: #5f5e5b;
+  --color-secondary-container: #e5e2dd;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans);
+  }
+  
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    overflow-x: hidden;
+  }
+}
+
+/* Material Symbols Outlined helper styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga';
+}
+
+/* Hide scrollbars for clean horizontal tab bars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom drop cap */
+.drop-cap::first-letter {
+  font-family: var(--font-serif);
+  font-size: 3.75rem;
+  line-height: 0.85;
+  float: left;
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}

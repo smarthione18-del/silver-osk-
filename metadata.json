@@ -1,0 +1,6 @@
+{
+  "name": "StoryWeave Editorial Anthology",
+  "description": "An exquisite literary anthology platform weaving tales, folklore, and speculative fiction across generations with immersive audio and live reading well.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
