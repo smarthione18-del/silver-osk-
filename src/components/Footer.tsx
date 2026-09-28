@@ -24,18 +24,28 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Brand Banner & Literary Motto */}
         <div className="pb-8 mb-8 border-b border-[#1c2541] flex flex-col md:flex-row items-center justify-between gap-6">
           <div
-            onClick={() => onNavigate('discover')}
-            className="flex items-center gap-4 cursor-pointer group"
+            onClick={() => onNavigate('simple-indian')}
+            className="flex items-center gap-3 cursor-pointer group"
           >
-            <img
-              alt="StoryWeave Brand Logo"
-              className="h-8 w-auto object-contain brightness-0 invert group-hover:scale-105 transition-transform"
-              src="https://lh3.googleusercontent.com/aida/AEtjO1VSvdTRewgs___1wSoWjbr71ValK9el78m6kCSYL-9AmYusBfvd24zQmycAdfu2o1Z6F7NZLzuRKERG-82YQxP9aGaIqdTAzsrBlnGCcNwX4nbU2NVggvCCgSozMUBylS6iK_rBn-VKd209avJk0sYlHDpVebIKitwUidNqsbtWw53czPhX9OBHtb-O8tvPz4vSIscIxOTleUkScLaSZazfQQI9AskZ8Buj2F70AYPNEcakf4Ke5Hae-Qg"
-            />
-            <span className="font-serif text-2xl text-white font-bold">StoryWeave</span>
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-400 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-105 transition-transform border border-amber-300">
+              🪔
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-2xl text-white font-bold group-hover:text-amber-300 transition-colors">
+                  KahaniKunj
+                </span>
+                <span className="text-[10px] font-sans font-bold px-2 py-0.5 rounded-full bg-amber-600 text-white">
+                  कहानीकुंज
+                </span>
+              </div>
+              <span className="text-xs text-amber-200/80 font-medium">
+                Where Every Story Comes Alive! ✨
+              </span>
+            </div>
           </div>
-          <blockquote className="font-serif text-lg sm:text-xl italic text-[#dbe1ff] max-w-xl text-center md:text-right">
-            “Stories are threads that weave our humanity together.”
+          <blockquote className="font-serif text-base sm:text-lg italic text-[#dbe1ff] max-w-xl text-center md:text-right">
+            “Listen, read, imagine, and discover wonderful stories for every young mind.”
           </blockquote>
         </div>
 
@@ -201,7 +211,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         {/* Bottom Baseline Copyright & Icon Row */}
         <div className="pt-8 mt-8 border-t border-[#1c2541] flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[#838cae]">
-          <p>© 2026 StoryWeave Anthology. All literary rights reserved.</p>
+          <p>© 2026 KahaniKunj (कहानीकुंज) • Where Every Story Comes Alive! All stories crafted with love for children &amp; families.</p>
           <div className="flex items-center gap-4">
             <button
               onClick={() => onNavigate('discover')}

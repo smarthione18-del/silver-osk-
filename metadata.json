@@ -1,6 +1,6 @@
 {
-  "name": "StoryWeave Editorial Anthology",
-  "description": "An exquisite literary anthology platform weaving tales, folklore, and speculative fiction across generations with immersive audio and live reading well.",
+  "name": "KahaniKunj",
+  "description": "Where Every Story Comes Alive! A magical, child-friendly Indian storytelling world with audio narration, soothing ragas, age groups, and moral stories.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

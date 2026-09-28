@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Story, ViewMode, ReadingTheme } from '../types';
+import { Story, ViewMode, ReadingTheme, AppLanguage } from '../types';
+import { Mic, Volume2, Sparkles, Share2, ZoomIn, X, ChevronLeft, ChevronRight, Image as ImageIcon, Crown, Music2 } from 'lucide-react';
+import { analyzeStoryIntelligence, getLocalizedStoryContent } from '../utils/storytellerEngine';
 
 interface StoryDetailViewProps {
   story: Story;
@@ -11,6 +13,8 @@ interface StoryDetailViewProps {
   onPlayAudio: (story: Story) => void;
   isAudioPlaying: boolean;
   onOpenFellowshipModal: () => void;
+  onOpenVoiceAgent?: (story: Story) => void;
+  language?: AppLanguage;
 }
 
 export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
@@ -23,18 +27,62 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
   onPlayAudio,
   isAudioPlaying,
   onOpenFellowshipModal,
+  onOpenVoiceAgent,
+  language = 'hi',
 }) => {
   const [readingTheme, setReadingTheme] = useState<ReadingTheme>('warm');
   const [fontScale, setFontScale] = useState(100);
   const [useDyslexicFont, setUseDyslexicFont] = useState(false);
   const [autoScrollSpeed, setAutoScrollSpeed] = useState('off');
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
-  const [unlockedChapters, setUnlockedChapters] = useState<number[]>([0]);
+  const [unlockedChapters, setUnlockedChapters] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const [enlargedImage, setEnlargedImage] = useState<{ url: string; caption: string } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [offlineDownloaded, setOfflineDownloaded] = useState(false);
   const [activeGlossaryWord, setActiveGlossaryWord] = useState<string | null>(null);
+  const [isReadingAloud, setIsReadingAloud] = useState(false);
 
   const readerRef = useRef<HTMLDivElement>(null);
+  const isHindi = language === 'hi';
+  const loc = getLocalizedStoryContent(story, language, activeChapterIndex);
+  const intelligence = analyzeStoryIntelligence(story);
+
+  const readChapterAloud = () => {
+    if (!('speechSynthesis' in window)) return;
+    if (isReadingAloud) {
+      window.speechSynthesis.cancel();
+      setIsReadingAloud(false);
+      return;
+    }
+
+    const currentCh = story.chapters[activeChapterIndex] || story.chapters[0];
+    const textToSpeak = isHindi
+      ? `${currentCh.hindiTitle || currentCh.title}। ${currentCh.hindiContent || currentCh.content}`
+      : `${currentCh.title}. ${currentCh.content}`;
+
+    try {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = isHindi ? 'hi-IN' : 'en-US';
+      utterance.rate = 0.93;
+      utterance.onstart = () => setIsReadingAloud(true);
+      utterance.onend = () => setIsReadingAloud(false);
+      utterance.onerror = () => setIsReadingAloud(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech error:', e);
+      setIsReadingAloud(false);
+    }
+  };
+
+  const handleShareStoryOnWhatsApp = () => {
+    const title = isHindi ? story.hindiTitle || story.title : story.title;
+    const moral = isHindi ? story.hindiMoral || story.moral : story.moral;
+    const msg = `🪔 *KahaniKunj (कहानीकुंज)*\n\n📖 *${title}*\n✍️ ${story.author}\n\n✨ *सीख:* ${moral || ''}\n\n👉 यहाँ पढ़ें और सुनें:\n${window.location.href}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+  };
 
   // Auto-scroll logic
   useEffect(() => {
@@ -190,15 +238,24 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                   {tag}
                 </span>
               ))}
+              {/* Story Intelligence Tag */}
+              <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-900 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+                <Crown size={12} className="text-amber-600" />
+                <span>{intelligence.mood}</span>
+              </span>
+              <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-900 border border-indigo-400/30 text-xs font-semibold flex items-center gap-1">
+                <Music2 size={12} className="text-indigo-600" />
+                <span>🎵 {intelligence.recommendedMusic.replace('_', ' ')}</span>
+              </span>
             </div>
 
             {/* Main Title & Subtitle */}
             <div className="flex flex-col gap-2">
               <h1 className="font-serif text-3xl sm:text-5xl font-bold text-[#06102b] tracking-tight leading-tight">
-                {story.title}
+                {loc.title}
               </h1>
               <p className="font-serif text-base sm:text-lg text-[#45464d] italic">
-                {story.subtitle || story.synopsis}
+                {loc.subtitle || loc.synopsis}
               </p>
             </div>
 
@@ -288,15 +345,25 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                 className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-[#06102b] text-white font-sans text-sm font-bold shadow-md hover:bg-[#1c2541] transition-all active:scale-[0.99]"
               >
                 <span className="material-symbols-outlined text-[20px]">auto_stories</span>
-                Start Reading Chapter 1
+                {isHindi ? 'अध्याय 1 पढ़ना शुरू करें' : 'Start Reading Chapter 1'}
               </button>
               <button
                 onClick={() => onPlayAudio(story)}
                 className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-[#ffe9e7] hover:bg-[#ffe1df] text-[#06102b] font-sans text-sm font-semibold transition-all border border-[#c6c6ce]/30"
               >
                 <span className="material-symbols-outlined text-[20px]">headphones</span>
-                Listen Audio Edition
+                {isHindi ? 'ऑडियो सुनें' : 'Listen Audio Edition'}
               </button>
+              {onOpenVoiceAgent && (
+                <button
+                  onClick={() => onOpenVoiceAgent(story)}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-sans text-sm font-bold shadow transition-all active:scale-[0.99]"
+                  title="दीदी से बोलकर समझें"
+                >
+                  <Mic size={18} />
+                  <span>{isHindi ? 'दीदी से समझें' : 'Voice Saathi'}</span>
+                </button>
+              )}
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={() => onToggleBookmark(story.id)}
@@ -622,16 +689,160 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
               </span>
             </div>
 
-            {/* Chapter Heading */}
-            <div className="text-center max-w-lg mx-auto mb-8">
+            {/* Chapter Heading & Aloud Controls */}
+            <div className="text-center max-w-lg mx-auto mb-6">
               <span className="text-[11px] uppercase tracking-widest text-[#be8222] font-bold">
-                Chapter {activeChapter.number}
+                {isHindi ? `अध्याय ${activeChapter.number}` : `Chapter ${activeChapter.number}`}
               </span>
               <h3 className="font-serif text-2xl sm:text-3xl font-bold mt-1">
-                {activeChapter.title}
+                {isHindi ? activeChapter.hindiTitle || activeChapter.title : activeChapter.title}
               </h3>
-              <div className="w-12 h-0.5 bg-[#feb956] mx-auto mt-3" />
+              <div className="w-12 h-0.5 bg-[#feb956] mx-auto mt-2 mb-4" />
+
+              {/* Read Aloud & Saathi Row */}
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={readChapterAloud}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs ${
+                    isReadingAloud
+                      ? 'bg-red-600 text-white animate-pulse'
+                      : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                  }`}
+                >
+                  <Volume2 size={14} />
+                  <span>
+                    {isReadingAloud
+                      ? isHindi
+                        ? 'आवाज़ रोकें (Stop)'
+                        : 'Stop Speaking'
+                      : isHindi
+                      ? '🔊 पूरा पाठ बोलकर सुनाएं'
+                      : '🔊 Read Chapter Aloud'}
+                  </span>
+                </button>
+                {onOpenVoiceAgent && (
+                  <button
+                    onClick={() => onOpenVoiceAgent(story)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300 transition-all"
+                  >
+                    <Mic size={14} className="text-orange-600" />
+                    <span>{isHindi ? 'दीदी से पूछें' : 'Ask Saathi'}</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleShareStoryOnWhatsApp}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-xs transition-all active:scale-95"
+                  title="Share on WhatsApp"
+                >
+                  <Share2 size={13} />
+                  <span>{isHindi ? 'व्हाट्सएप' : 'WhatsApp'}</span>
+                </button>
+              </div>
             </div>
+
+            {/* Story Moral Banner if available */}
+            {(story.hindiMoral || story.moral) && (
+              <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-3 mb-6 text-xs flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-600 shrink-0" />
+                <div>
+                  <span className="font-bold">{isHindi ? 'इस कथा की सीख: ' : 'Moral: '}</span>
+                  <span>{isHindi ? story.hindiMoral?.replace('सीख: ', '') || story.moral : story.moral}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Page-by-Page Navigation & Category Badges */}
+            <div className="mb-6 p-3.5 bg-current/5 rounded-2xl border border-current/10 flex flex-wrap items-center justify-between gap-3">
+              {/* Left: Age & Story Type info */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="px-2.5 py-1 bg-amber-600 text-white font-bold rounded-lg shadow-2xs">
+                  {story.targetAgeLabel}
+                </span>
+                <span className="px-2.5 py-1 bg-current/10 font-medium rounded-lg">
+                  {story.genre}
+                </span>
+                <span className="px-2 py-0.5 opacity-70 text-[11px]">
+                  ⏱️ {activeChapter.readingMinutes} {isHindi ? 'मिनट पन्ना' : 'min page'}
+                </span>
+              </div>
+
+              {/* Right: Page Flip Buttons */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <button
+                  disabled={activeChapterIndex === 0}
+                  onClick={() => {
+                    setActiveChapterIndex(Math.max(0, activeChapterIndex - 1));
+                    readerRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-3 py-1.5 rounded-xl border border-current/20 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-current/10 transition-all flex items-center gap-1"
+                >
+                  <ChevronLeft size={14} />
+                  <span>{isHindi ? 'पिछला पन्ना' : 'Prev Page'}</span>
+                </button>
+
+                <span className="text-xs font-bold px-2.5 py-1 bg-current/10 rounded-lg">
+                  {isHindi ? `पन्ना ${activeChapterIndex + 1}/${story.chapters.length}` : `Page ${activeChapterIndex + 1}/${story.chapters.length}`}
+                </span>
+
+                <button
+                  disabled={activeChapterIndex === story.chapters.length - 1}
+                  onClick={() => {
+                    setActiveChapterIndex(Math.min(story.chapters.length - 1, activeChapterIndex + 1));
+                    readerRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1 shadow-xs"
+                >
+                  <span>{isHindi ? 'अगला पन्ना' : 'Next Page'}</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Page-by-Page High-Fidelity Artwork */}
+            {activeChapter.image || story.coverImage ? (
+              <div className="relative mb-8 rounded-2xl overflow-hidden shadow-lg border border-current/15 group">
+                <div className="relative aspect-[16/9] w-full bg-slate-900 overflow-hidden">
+                  <img
+                    src={activeChapter.image || story.coverImage}
+                    alt={activeChapter.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30 pointer-events-none" />
+
+                  {/* Artwork Tag Badge */}
+                  <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-amber-200 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
+                    <ImageIcon size={13} />
+                    <span>{isHindi ? `सचित्र पन्ना ${activeChapter.number}` : `Illustrated Page ${activeChapter.number}`}</span>
+                  </div>
+
+                  {/* Zoom / Full Resolution Button */}
+                  <button
+                    onClick={() =>
+                      setEnlargedImage({
+                        url: activeChapter.image || story.coverImage,
+                        caption: isHindi
+                          ? activeChapter.hindiImageCaption || activeChapter.imageCaption || activeChapter.hindiTitle || activeChapter.title
+                          : activeChapter.imageCaption || activeChapter.title,
+                      })
+                    }
+                    className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white p-2 rounded-full transition-all shadow-md active:scale-90"
+                    title={isHindi ? 'पूरा चित्र बड़ा करके देखें' : 'View Full Image'}
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+
+                  {/* Caption Overlay */}
+                  <div className="absolute bottom-0 inset-x-0 p-4 text-white">
+                    <p className="text-xs sm:text-sm font-medium drop-shadow-md text-amber-100 italic">
+                      ✨ {isHindi
+                        ? activeChapter.hindiImageCaption || activeChapter.imageCaption || activeChapter.hindiTitle || activeChapter.title
+                        : activeChapter.imageCaption || activeChapter.title}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Story Text Content with Drop Cap */}
             <div
@@ -643,21 +854,23 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                 lineHeight: `${(fontScale / 100) * 2.1}rem`,
               }}
             >
-              {activeChapter.content.split('\n\n').map((paragraph, pIdx) => {
-                if (pIdx === 0) {
-                  const firstChar = paragraph.charAt(0);
-                  const remaining = paragraph.slice(1);
-                  return (
-                    <p key={pIdx}>
-                      <span className="float-left text-5xl leading-none font-serif font-bold pr-3 pt-1 text-[#06102b]">
-                        {firstChar}
-                      </span>
-                      {remaining}
-                    </p>
-                  );
-                }
-                return <p key={pIdx}>{paragraph}</p>;
-              })}
+              {(isHindi && activeChapter.hindiContent ? activeChapter.hindiContent : activeChapter.content)
+                .split('\n\n')
+                .map((paragraph, pIdx) => {
+                  if (pIdx === 0) {
+                    const firstChar = paragraph.charAt(0);
+                    const remaining = paragraph.slice(1);
+                    return (
+                      <p key={pIdx}>
+                        <span className="float-left text-5xl leading-none font-serif font-bold pr-3 pt-1 text-[#06102b]">
+                          {firstChar}
+                        </span>
+                        {remaining}
+                      </p>
+                    );
+                  }
+                  return <p key={pIdx}>{paragraph}</p>;
+                })}
             </div>
 
             {/* Interactive Glossary helper */}
@@ -703,7 +916,7 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                   </span>
                   <p className="font-serif text-lg font-bold">Continue with Chapter 2 &amp; 3</p>
                   <p className="text-xs max-w-md opacity-80">
-                    Join the StoryWeave Scholastic Fellowship to unlock the full grimoire, voice dramatization, and printable cartography.
+                    Join the KahaniKunj Story Fellowship to unlock the full grimoire, voice dramatization, and printable cartography.
                   </p>
                   <button
                     onClick={() => {
@@ -716,6 +929,52 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
                 </div>
               </div>
             )}
+            {/* Bottom Page Navigation Controls */}
+            <div className="mt-10 pt-6 border-t border-current/15 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <button
+                disabled={activeChapterIndex === 0}
+                onClick={() => {
+                  setActiveChapterIndex(Math.max(0, activeChapterIndex - 1));
+                  readerRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-current/20 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-current/10 transition-all flex items-center justify-center gap-2"
+              >
+                <ChevronLeft size={16} />
+                <span>{isHindi ? '⬅️ पिछला पन्ना' : '⬅️ Previous Page'}</span>
+              </button>
+
+              {/* Quick Jump Page Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-full">
+                {story.chapters.map((ch, idx) => (
+                  <button
+                    key={ch.id}
+                    onClick={() => {
+                      setActiveChapterIndex(idx);
+                      readerRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      activeChapterIndex === idx
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-current/10 hover:bg-current/15 opacity-80'
+                    }`}
+                  >
+                    {isHindi ? `पन्ना ${idx + 1}` : `P.${idx + 1}`}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                disabled={activeChapterIndex === story.chapters.length - 1}
+                onClick={() => {
+                  setActiveChapterIndex(Math.min(story.chapters.length - 1, activeChapterIndex + 1));
+                  readerRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+              >
+                <span>{isHindi ? 'अगला पन्ना पढ़ें ➡️' : 'Next Page ➡️'}</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </article>
         </section>
 
@@ -785,6 +1044,43 @@ export const StoryDetailView: React.FC<StoryDetailViewProps> = ({
           </div>
         </section>
       </div>
+
+      {/* High-Resolution Artwork Lightbox Modal */}
+      {enlargedImage && (
+        <div
+          onClick={() => setEnlargedImage(null)}
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-5xl w-full bg-slate-950 rounded-2xl overflow-hidden border border-white/20 shadow-2xl flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/10 text-white">
+              <span className="font-bold text-sm font-serif text-amber-200 flex items-center gap-2">
+                <ImageIcon size={18} />
+                <span>{isHindi ? 'सचित्र कलाकृति (High-Resolution Illustration)' : 'Story Artwork'}</span>
+              </span>
+              <button
+                onClick={() => setEnlargedImage(null)}
+                className="p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="relative aspect-[16/9] w-full bg-black flex items-center justify-center">
+              <img
+                src={enlargedImage.url}
+                alt="Enlarged story artwork"
+                referrerPolicy="no-referrer"
+                className="max-h-[75vh] w-auto max-w-full object-contain"
+              />
+            </div>
+            <div className="p-4 bg-slate-900 text-amber-100 text-xs sm:text-sm font-medium border-t border-white/10">
+              ✨ {enlargedImage.caption}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

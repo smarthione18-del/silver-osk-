@@ -44,87 +44,80 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   if (!isOpen) return null;
 
   const filteredStories = stories.filter((s) => {
-    const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
+    if (!q) return true;
     return (
       s.title.toLowerCase().includes(q) ||
+      (s.hindiTitle && s.hindiTitle.toLowerCase().includes(q)) ||
       s.author.toLowerCase().includes(q) ||
+      (s.authorTitle && s.authorTitle.toLowerCase().includes(q)) ||
       s.genre.toLowerCase().includes(q) ||
       s.tags.some((t) => t.toLowerCase().includes(q)) ||
-      s.synopsis.toLowerCase().includes(q)
+      s.synopsis.toLowerCase().includes(q) ||
+      (s.hindiSynopsis && s.hindiSynopsis.toLowerCase().includes(q)) ||
+      (s.moral && s.moral.toLowerCase().includes(q)) ||
+      (s.hindiMoral && s.hindiMoral.toLowerCase().includes(q)) ||
+      (s.targetAgeLabel && s.targetAgeLabel.toLowerCase().includes(q))
     );
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/60 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-20 px-4 bg-black/60 backdrop-blur-xs">
       <div
-        className="w-full max-w-2xl bg-[#fff8f7] rounded-2xl shadow-2xl border border-[#c6c6ce]/40 overflow-hidden flex flex-col max-h-[75vh] animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-[#fff8f7] dark:bg-slate-900 rounded-2xl shadow-2xl border border-[#c6c6ce]/40 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#ffe9e7] bg-white">
-          <span className="material-symbols-outlined text-[#be8222] text-[22px]">
-            travel_explore
-          </span>
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#ffe9e7] dark:border-slate-800 bg-white dark:bg-slate-900">
+          <span className="text-xl">🔍</span>
           <input
             ref={inputRef}
             type="text"
-            className="flex-1 bg-transparent text-[#06102b] placeholder:text-[#45464d]/60 text-base font-medium focus:outline-none"
-            placeholder="Search stories, authors, mythical realms, age groups..."
+            className="flex-1 bg-transparent text-[#06102b] dark:text-white placeholder:text-[#45464d]/60 dark:placeholder:text-slate-400 text-base font-medium focus:outline-none"
+            placeholder="Search stories, Tenali, Akbar, Krishna, Panchatantra, age group..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="text-xs text-slate-400 hover:text-slate-600 px-2"
+            >
+              ✕
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="px-2 py-1 rounded bg-[#fff0ef] text-xs font-semibold text-[#45464d] hover:bg-[#ffe1df]"
+            className="px-2 py-1 rounded bg-[#fff0ef] dark:bg-slate-800 text-xs font-semibold text-[#45464d] dark:text-slate-300 hover:bg-[#ffe1df]"
           >
             ESC
           </button>
         </div>
 
         {/* Quick Category Jump Shortcuts */}
-        <div className="flex items-center gap-2 px-4 py-2 bg-[#fff0ef] border-b border-[#ffe9e7] text-xs text-[#45464d] overflow-x-auto no-scrollbar">
-          <span className="font-bold text-[#06102b] shrink-0">Jump to:</span>
-          <button
-            onClick={() => {
-              onNavigate('discover');
-              onClose();
-            }}
-            className="px-2 py-0.5 rounded bg-white hover:bg-[#ffe1df] shrink-0 font-medium"
-          >
-            Folio Anthologies
-          </button>
-          <button
-            onClick={() => {
-              onNavigate('explore-by-age');
-              onClose();
-            }}
-            className="px-2 py-0.5 rounded bg-white hover:bg-[#ffe1df] shrink-0 font-medium"
-          >
-            Ages 5–8 Little Dreamers
-          </button>
-          <button
-            onClick={() => {
-              onNavigate('genres');
-              onClose();
-            }}
-            className="px-2 py-0.5 rounded bg-white hover:bg-[#ffe1df] shrink-0 font-medium"
-          >
-            Spatial Audio Stories
-          </button>
+        <div className="flex items-center gap-1.5 px-4 py-2 bg-[#fff0ef] dark:bg-slate-800/60 border-b border-[#ffe9e7] dark:border-slate-800 text-xs text-[#45464d] dark:text-slate-300 overflow-x-auto no-scrollbar">
+          <span className="font-bold text-[#06102b] dark:text-white shrink-0">Quick:</span>
+          {['Tenali', 'Akbar', 'Shiva', 'Krishna', 'Panchatantra', 'Moral', '3–6', '7–10', '11–14'].map((chip) => (
+            <button
+              key={chip}
+              onClick={() => setQuery(chip)}
+              className="px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-700 hover:bg-amber-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 shrink-0 font-medium text-[11px] transition-colors"
+            >
+              {chip}
+            </button>
+          ))}
         </div>
 
         {/* Results List */}
-        <div className="overflow-y-auto p-3 space-y-1.5 flex-1 divide-y divide-[#ffe9e7]/50">
+        <div className="overflow-y-auto p-3 space-y-1.5 flex-1 divide-y divide-[#ffe9e7]/50 dark:divide-slate-800">
           {filteredStories.length === 0 ? (
-            <div className="text-center py-12 text-[#45464d]">
-              <span className="material-symbols-outlined text-4xl text-[#be8222] mb-2">
-                menu_book
-              </span>
-              <p className="font-serif text-lg font-bold text-[#06102b]">
-                No manuscripts match "{query}"
+            <div className="text-center py-12 text-[#45464d] dark:text-slate-400">
+              <span className="text-4xl mb-2 block">📖</span>
+              <p className="font-serif text-lg font-bold text-[#06102b] dark:text-white">
+                No stories match "{query}"
               </p>
-              <p className="text-xs text-[#45464d] mt-1">
-                Try searching for 'Prague', 'Folklore', 'Fry', 'Hedgehog', or 'Sci-Fi'
+              <p className="text-xs text-[#45464d] dark:text-slate-400 mt-1">
+                Try searching for 'Tenali', 'Akbar', 'Krishna', 'Shiva', 'Crow', or 'Folklore'
               </p>
             </div>
           ) : (
@@ -135,26 +128,29 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   onSelectStory(story);
                   onClose();
                 }}
-                className="group flex items-center justify-between p-2.5 rounded-xl hover:bg-[#ffe9e7] cursor-pointer transition-colors pt-3"
+                className="group flex items-center justify-between p-2.5 rounded-xl hover:bg-[#ffe9e7] dark:hover:bg-slate-800 cursor-pointer transition-colors pt-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     alt={story.title}
                     src={story.coverImage}
-                    className="w-12 h-12 rounded-lg object-cover ring-1 ring-[#c6c6ce]/40 group-hover:scale-105 transition-transform shrink-0"
+                    className="w-12 h-12 rounded-lg object-cover ring-1 ring-[#c6c6ce]/40 dark:ring-slate-700 group-hover:scale-105 transition-transform shrink-0"
                   />
                   <div className="min-w-0">
-                    <h5 className="font-serif font-bold text-sm text-[#06102b] group-hover:text-[#be8222] truncate transition-colors">
-                      {story.title}
+                    <h5 className="font-serif font-bold text-sm text-[#06102b] dark:text-white group-hover:text-amber-600 truncate transition-colors">
+                      {story.hindiTitle ? `${story.hindiTitle} (${story.title})` : story.title}
                     </h5>
-                    <p className="text-xs text-[#45464d] truncate">
-                      By {story.author} • {story.readingMinutes} min read • {story.lexile}
+                    <p className="text-xs text-[#45464d] dark:text-slate-400 truncate">
+                      {story.author} • {story.readingMinutes} min read
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] px-1.5 py-0.2 bg-[#fff0ef] rounded text-[#06102b] font-medium">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 rounded text-amber-900 dark:text-amber-300 font-bold">
+                        {story.targetAgeLabel.split('•')[0].trim()}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-[#fff0ef] dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300 font-medium">
                         {story.genre}
                       </span>
-                      <span className="text-[10px] text-[#be8222] font-semibold">
+                      <span className="text-[10px] text-amber-600 font-bold">
                         ★ {story.rating}
                       </span>
                     </div>
@@ -162,8 +158,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="material-symbols-outlined text-[#45464d] group-hover:translate-x-1 group-hover:text-[#be8222] text-[18px] transition-all">
-                    arrow_forward
+                  <span className="text-amber-600 group-hover:translate-x-1 text-base transition-transform font-bold">
+                    →
                   </span>
                 </div>
               </div>
